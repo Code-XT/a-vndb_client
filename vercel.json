@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/kana/:match*",
+      "destination": "https://api.vndb.org/kana/:match*"
+    }
+  ]
+}
