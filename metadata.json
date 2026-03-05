@@ -1,0 +1,5 @@
+{
+  "name": "VNDB Client",
+  "description": "A responsive, PWA-enabled client for the Visual Novel Database (VNDB) to browse, search, and manage your visual novel library.",
+  "requestFramePermissions": []
+}
