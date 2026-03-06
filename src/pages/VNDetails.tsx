@@ -231,6 +231,7 @@ const ReleasesSection: React.FC<{ releases: Release[] }> = ({ releases }) => {
   });
 
   const [activeLang, setActiveLang] = useState<string>("all");
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [showMTL, setShowMTL] = useState(false);
   const [typeFilter, setTypeFilter] = useState<
     "all" | "complete" | "partial" | "trial"
@@ -262,54 +263,84 @@ const ReleasesSection: React.FC<{ releases: Release[] }> = ({ releases }) => {
     <div className="-mx-1">
       {/* ── Toolbar ── */}
       <div className="px-1 mb-3 flex flex-wrap gap-2 items-center">
-        {/* Language tabs */}
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide flex-1">
+        {/* Language selector - Custom Dropdown for all screen sizes */}
+        <div className="flex-1 sm:flex-none sm:w-[200px] relative min-w-[130px]">
           <button
-            onClick={() => setActiveLang("all")}
-            className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
-              activeLang === "all"
-                ? "bg-slate-800 text-white border-slate-800"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-            }`}
+            onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+            className="w-full flex items-center justify-between bg-white border border-slate-200 text-slate-700 text-[11px] font-bold rounded-lg pl-3 pr-2 py-1.5 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 shadow-sm transition-colors hover:bg-slate-50"
           >
-            All
-            <span
-              className={`text-[10px] ${activeLang === "all" ? "text-slate-400" : "text-slate-300"}`}
-            >
-              {releases.length}
+            <span className="truncate">
+              {activeLang === "all"
+                ? `All Languages (${releases.length})`
+                : `${LANG_META[activeLang]?.flag ? LANG_META[activeLang].flag + " " : ""}${LANG_META[activeLang]?.label ?? activeLang.toUpperCase()} (${
+                    releases.filter((r) =>
+                      r.languages.some((l) => l.lang === activeLang),
+                    ).length
+                  })`}
             </span>
+            <div className="flex items-center text-slate-500 pl-1">
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-200 ${langDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </div>
           </button>
-          {sortedLangs.map((lang) => {
-            const cnt = releases.filter((r) =>
-              r.languages.some((l) => l.lang === lang),
-            ).length;
-            const meta = LANG_META[lang];
-            const active = activeLang === lang;
-            return (
-              <button
-                key={lang}
-                onClick={() => setActiveLang(lang)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
-                  active
-                    ? "bg-indigo-600 text-white border-indigo-600"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-indigo-300"
-                }`}
-              >
-                <span className="text-sm leading-none">
-                  {meta?.flag ?? "🌐"}
-                </span>
-                <span className="hidden sm:inline">
-                  {meta?.label ?? lang.toUpperCase()}
-                </span>
-                <span className="sm:hidden">{lang.toUpperCase()}</span>
-                <span
-                  className={`text-[9px] ${active ? "text-indigo-300" : "text-slate-300"}`}
+
+          {langDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setLangDropdownOpen(false)}
+              />
+              <div className="absolute z-20 top-full left-0 mt-1 w-full min-w-[200px] flex flex-col gap-0.5 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1.5">
+                <button
+                  onClick={() => {
+                    setActiveLang("all");
+                    setLangDropdownOpen(false);
+                  }}
+                  className={`flex items-center px-2 py-1.5 rounded-md text-[11px] text-left font-bold transition-colors ${
+                    activeLang === "all"
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
                 >
-                  {cnt}
-                </span>
-              </button>
-            );
-          })}
+                  All Languages
+                  <span className="font-normal text-slate-400 ml-auto">
+                    ({releases.length})
+                  </span>
+                </button>
+                {sortedLangs.map((lang) => {
+                  const cnt = releases.filter((r) =>
+                    r.languages.some((l) => l.lang === lang),
+                  ).length;
+                  const meta = LANG_META[lang];
+                  const active = activeLang === lang;
+                  return (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        setActiveLang(lang);
+                        setLangDropdownOpen(false);
+                      }}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-left font-bold transition-colors ${
+                        active
+                          ? "bg-indigo-50 text-indigo-700"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <span className="text-sm leading-none">
+                        {meta?.flag ?? "🌐"}
+                      </span>
+                      <span>{meta?.label ?? lang.toUpperCase()}</span>
+                      <span className="font-normal text-slate-400 ml-auto">
+                        ({cnt})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex gap-1.5 flex-shrink-0">
