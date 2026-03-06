@@ -1332,6 +1332,20 @@ export const VNDetails: React.FC = () => {
     })();
   }, [id, token, user]);
 
+  const isNSFW =
+    !showNSFW && vn?.image && (vn.image.sexual > 1 || vn.image.violence > 1);
+  const imageUrl = vn?.image?.url ?? "";
+  const filteredShots = (vn?.screenshots ?? []).filter(
+    (s) => s.sexual <= sexualFilter && s.violence <= violenceFilter,
+  );
+
+  const allImages = React.useMemo(() => {
+    const images: string[] = [];
+    if (imageUrl) images.push(imageUrl);
+    filteredShots.forEach((s) => images.push(s.url));
+    return images;
+  }, [imageUrl, filteredShots]);
+
   if (loading)
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -1354,13 +1368,6 @@ export const VNDetails: React.FC = () => {
       </div>
     );
 
-  const isNSFW =
-    !showNSFW && vn.image && (vn.image.sexual > 1 || vn.image.violence > 1);
-  const imageUrl = vn.image?.url ?? "";
-  const filteredShots = (vn.screenshots ?? []).filter(
-    (s) => s.sexual <= sexualFilter && s.violence <= violenceFilter,
-  );
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -1368,8 +1375,10 @@ export const VNDetails: React.FC = () => {
       className="pb-8"
     >
       <ImageModal
-        imageUrl={selectedImage}
+        images={allImages}
+        currentImage={selectedImage}
         onClose={() => setSelectedImage(null)}
+        onSelectImage={setSelectedImage}
       />
 
       {/* Hero */}
