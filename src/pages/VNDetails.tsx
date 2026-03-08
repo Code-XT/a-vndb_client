@@ -36,6 +36,7 @@ import {
   X,
   Package,
   ExternalLink,
+  Ban,
 } from "lucide-react";
 import { ImageModal } from "../components/ImageModal";
 
@@ -1090,31 +1091,46 @@ const LibraryPanel: React.FC<{
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [pendingLabel, setPendingLabel] = useState<number>(0);
+  const [pendingStatus, setPendingStatus] = useState<number>(0);
+  const [pendingWishlist, setPendingWishlist] = useState<boolean>(false);
+  const [pendingBlacklist, setPendingBlacklist] = useState<boolean>(false);
   const [pendingScore, setPendingScore] = useState<number>(0);
 
   useEffect(() => {
-    setPendingLabel(entry?.labels?.[0]?.id ?? 0);
+    // Current state derived from labels
+    const pStatus = entry?.labels?.find((l) => l.id >= 1 && l.id <= 4)?.id ?? 0;
+    const pWish = entry?.labels?.some((l) => l.id === 5) ?? false;
+    const pBlack = entry?.labels?.some((l) => l.id === 6) ?? false;
+    setPendingStatus(pStatus);
+    setPendingWishlist(pWish);
+    setPendingBlacklist(pBlack);
     setPendingScore(entry?.vote ? Math.round(entry.vote / 10) : 0);
   }, [entry]);
 
-  const currentLabel = entry?.labels?.[0]?.id ?? 0;
+  const currentStatus =
+    entry?.labels?.find((l) => l.id >= 1 && l.id <= 4)?.id ?? 0;
+  const currentWishlist = entry?.labels?.some((l) => l.id === 5) ?? false;
+  const currentBlacklist = entry?.labels?.some((l) => l.id === 6) ?? false;
   const currentScore = entry?.vote ? Math.round(entry.vote / 10) : 0;
+
+  const hasAnyLabel = currentStatus > 0 || currentWishlist || currentBlacklist;
 
   const handleSave = async () => {
     if (!token) return;
     setBusy(true);
     try {
-      const labels = pendingLabel > 0 ? [pendingLabel] : [];
+      const labels: number[] = [];
+      if (pendingStatus > 0) labels.push(pendingStatus);
+      if (pendingWishlist) labels.push(5);
+      if (pendingBlacklist) labels.push(6);
+
       const vote = pendingScore > 0 ? pendingScore * 10 : null;
       await updateUlist(token, vn.id, labels, vote);
+
       onEntryChange({
         id: entry?.id ?? "temp",
         vn,
-        labels:
-          pendingLabel > 0
-            ? [{ id: pendingLabel, label: STATUS_LABELS[pendingLabel] }]
-            : [],
+        labels: labels.map((id) => ({ id, label: STATUS_LABELS[id] })),
         vote,
         added: entry?.added,
       });
@@ -1132,7 +1148,9 @@ const LibraryPanel: React.FC<{
     try {
       await removeFromUlist(token, vn.id);
       onEntryChange(null);
-      setPendingLabel(0);
+      setPendingStatus(0);
+      setPendingWishlist(false);
+      setPendingBlacklist(false);
       setPendingScore(0);
       setOpen(false);
     } catch (e: any) {
@@ -1162,14 +1180,34 @@ const LibraryPanel: React.FC<{
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 p-4">
         <div className="flex-1 min-w-0">
-          {currentLabel > 0 ? (
-            <div className="flex items-center gap-2">
-              <span
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[currentLabel]}`}
-              />
-              <span className="text-sm font-semibold text-slate-800">
-                {STATUS_LABELS[currentLabel]}
-              </span>
+          {hasAnyLabel ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              {currentStatus > 0 && (
+                <div className="flex items-center gap-1.5 bg-slate-100 pl-1.5 pr-2 py-0.5 rounded-full">
+                  <span
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[currentStatus]}`}
+                  />
+                  <span className="text-sm font-semibold text-slate-800">
+                    {STATUS_LABELS[currentStatus]}
+                  </span>
+                </div>
+              )}
+              {currentWishlist && (
+                <div
+                  className="text-purple-600 bg-purple-50 p-1 rounded-full border border-purple-100"
+                  title="Wishlist"
+                >
+                  <Bookmark size={14} className="fill-purple-400" />
+                </div>
+              )}
+              {currentBlacklist && (
+                <div
+                  className="text-slate-500 bg-slate-100 p-1 rounded-full border border-slate-200"
+                  title="Blacklist"
+                >
+                  <Ban size={14} />
+                </div>
+              )}
               {currentScore > 0 && (
                 <span className="ml-auto flex items-center gap-1 text-yellow-600 font-bold text-sm">
                   <Star size={11} className="fill-yellow-400 text-yellow-400" />
@@ -1184,37 +1222,64 @@ const LibraryPanel: React.FC<{
         <button
           onClick={() => setOpen((o) => !o)}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors flex-shrink-0 ${
-            currentLabel > 0
+            hasAnyLabel
               ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
               : "bg-indigo-600 text-white hover:bg-indigo-700"
           }`}
         >
           <Bookmark size={14} />
-          {currentLabel > 0 ? "Edit" : "Add"}
+          {hasAnyLabel ? "Edit" : "Add"}
         </button>
       </div>
       {open && (
         <div className="border-t border-slate-100 p-4 space-y-4 bg-slate-50">
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Status
+              Progress Status
             </p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {Object.entries(STATUS_LABELS).map(([id, label]) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+              {[1, 2, 3, 4].map((id) => (
                 <button
                   key={id}
                   onClick={() =>
-                    setPendingLabel(pendingLabel === +id ? 0 : +id)
+                    setPendingStatus(pendingStatus === id ? 0 : id)
                   }
                   className={`text-xs py-1.5 px-2 rounded-lg font-medium border transition-all ${
-                    pendingLabel === +id
+                    pendingStatus === id
                       ? "bg-indigo-600 text-white border-indigo-600"
                       : "bg-white text-slate-600 border-slate-200 hover:border-indigo-300"
                   }`}
                 >
-                  {label}
+                  {STATUS_LABELS[id]}
                 </button>
               ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              Add To
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPendingWishlist(!pendingWishlist)}
+                className={`flex-1 text-xs py-1.5 px-2 rounded-lg font-medium border transition-all flex items-center justify-center gap-1.5 ${
+                  pendingWishlist
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-purple-300"
+                }`}
+              >
+                Wishlist
+              </button>
+              <button
+                onClick={() => setPendingBlacklist(!pendingBlacklist)}
+                className={`flex-1 text-xs py-1.5 px-2 rounded-lg font-medium border transition-all flex items-center justify-center gap-1.5 ${
+                  pendingBlacklist
+                    ? "bg-slate-700 text-white border-slate-700"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                }`}
+              >
+                Blacklist
+              </button>
             </div>
           </div>
           <div>
@@ -1250,11 +1315,12 @@ const LibraryPanel: React.FC<{
               )}
               Save
             </button>
-            {currentLabel > 0 && (
+            {hasAnyLabel && (
               <button
                 onClick={handleRemove}
                 disabled={busy}
                 className="px-3 py-2 border border-red-200 text-red-500 rounded-xl hover:bg-red-50 disabled:opacity-50 transition-colors"
+                title="Remove entirely from library"
               >
                 <Trash2 size={13} />
               </button>
