@@ -20,8 +20,8 @@ export default defineConfig(({mode}) => {
           'icons/maskable-icon-512.png',
         ],
         manifest: {
-          name: 'VNDB Client',
-          short_name: 'VNDB',
+          name: '𝚅𝙽/И𝙴𝚇𝚄𝚂',
+          short_name: 'VN/N',
           description: 'A fast, responsive client for the Visual Novel Database (vndb.org).',
           start_url: '/',
           scope: '/',

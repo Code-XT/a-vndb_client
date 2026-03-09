@@ -15,7 +15,7 @@ export default function App() {
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-500">
-            Loading VNDB Client…
+            Entering the VN Nexus…
           </div>
         }
       >
