@@ -70,7 +70,7 @@ export const Layout = () => {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-56 bg-white border-r border-slate-200 flex-shrink-0">
         <div className="px-5 py-5 border-b border-slate-100">
-          <h1 className="text-lg font-black text-indigo-600 tracking-tight">VNDB</h1>
+          <h1 className="text-lg font-black text-indigo-600 tracking-tight">𝚅𝙽/И𝙴𝚇𝚄𝚂</h1>
           <p className="text-[10px] text-slate-400 font-medium mt-0.5">Visual Novel Browser</p>
         </div>
         <nav className="flex-1 px-3 py-3 space-y-1">
